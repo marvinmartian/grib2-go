@@ -80,3 +80,42 @@ func TestExtractRecordFromFile(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestLoadTemplate31GribFile(t *testing.T) {
+	size, r, err := test_files.Load(test_files.Template31TestFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = r.Close() }()
+
+	grib := file.NewGribFile(r, templates.Version33())
+	foundTemplate31 := false
+	totalLength := 0
+	for indexed, recErr := range grib.Records {
+		if recErr != nil {
+			t.Fatal(recErr)
+		}
+		rec := indexed.Record
+		if rec.Grid.GridDefinitionTemplateNumber == 1 {
+			foundTemplate31 = true
+			gridDef, err := rec.Grid.Definition()
+			if err != nil {
+				t.Fatalf("error getting grid definition: %v", err)
+			}
+			points, err := gridDef.Points()
+			if err != nil {
+				t.Fatalf("error getting grid points: %v", err)
+			}
+			if len(points.Lats) == 0 || len(points.Lngs) == 0 {
+				t.Fatalf("expected non-empty lat/lon arrays for template 3.1, got %d lats, %d lngs", len(points.Lats), len(points.Lngs))
+			}
+		}
+		totalLength += rec.Indicator.GribLength
+	}
+	if !foundTemplate31 {
+		t.Fatalf("did not find any records with grid definition template 3.1 in %s", test_files.Template31TestFile)
+	}
+	if totalLength != size {
+		t.Fatalf("expected file size %d but got %d", size, totalLength)
+	}
+}

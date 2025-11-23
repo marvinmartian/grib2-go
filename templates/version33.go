@@ -77,6 +77,7 @@ func Version33() record.Templates {
 		},
 		gridDefinitionTemplates: map[int]record.GridDefinition{
 			0:  grid.Template0{},
+			1:  grid.Template1{},
 			30: grid.Template30{},
 			40: grid.Template40{},
 		},

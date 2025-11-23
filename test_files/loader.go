@@ -22,6 +22,7 @@ const (
 	MrmsAzShear                             TestFile = `.test_files/MRMS_MergedAzShear_0-2kmAGL_00.50_20251005-112817.grb2`
 	SingleRecordDataDef3Bitmap              TestFile = `.test_files/single-grib2-data-def-3-bitmap.grb2`
 	SingleRecordDataDef3PrimaryMissingValue TestFile = `.test_files/single-grib2-data-def-3-primary-missing-value-mgnmnt.grb2`
+	Template31TestFile                      TestFile = `.test_files/20251123T00Z_MSC_HRDPS_ABSV_ISBL_0700_RLatLon0.0225_PT000H.grib2`
 )
 
 func Load(file TestFile) (int, *os.File, error) {
