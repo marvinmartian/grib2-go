@@ -1,6 +1,10 @@
 package data_representation
 
 import (
+	"fmt"
+	"math"
+
+	"github.com/segmed/openjpeg/gojp2"
 	"github.com/skysparq/grib2-go/record"
 	u "github.com/skysparq/grib2-go/utility"
 )
@@ -41,6 +45,42 @@ func (t Template40) DecimalScale() int {
 }
 
 // GetValues unpacks the record's data into the original values
-func (t Template40) GetValues(_ record.Record) ([]float64, error) {
-	panic("not implemented")
+func (t Template40) GetValues(rec record.Record) ([]float64, error) {
+	// Decode JPEG 2000 data
+	width, height, pixelData, err := gojp2.DecodeJ2KImage(rec.Data.Data)
+	if err != nil {
+		return nil, fmt.Errorf("error decoding JPEG 2000 data: %w", err)
+	}
+
+	// Check that we have the expected number of points
+	expectedPoints := rec.Grid.TotalPoints
+	actualPoints := width * height
+	if actualPoints != expectedPoints {
+		return nil, fmt.Errorf("JPEG 2000 decoded data has %d points but expected %d", actualPoints, expectedPoints)
+	}
+
+	// Convert to float64 values
+	values := make([]float64, expectedPoints)
+	idx := 0
+	for _, row := range pixelData {
+		for _, pixel := range row {
+			// Apply the GRIB2 unpacking formula: Y = (R + X * 2^E) / 10^D
+			scaledValue := u.Unpack(float64(t.ReferenceValue), pixel, t.BinaryScaleFactor, t.DecimalScaleFactor)
+			values[idx] = scaledValue
+			idx++
+		}
+	}
+
+	// Apply bitmap masking for missing values
+	bmpR, err := NewBitmapReader(rec)
+	if err != nil {
+		return nil, fmt.Errorf("error creating bitmap reader: %w", err)
+	}
+	for i := range values {
+		if bmpR.IsMissing(i) {
+			values[i] = math.NaN()
+		}
+	}
+
+	return values, nil
 }
