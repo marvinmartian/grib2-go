@@ -1,3 +1,3 @@
-module github.com/skysparq/grib2-go
+module github.com/marvinmartian/grib2-go
 
 go 1.24
